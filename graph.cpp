@@ -20,17 +20,14 @@ void Graph::contract(int v, int w){
 }
 
 int Graph::maxRedDegree(){
+  auto vertices = getVertices();
   int mx = 0;
-  for(int i = 0; i  < n; i++){
-    if(contractionRemap[i] != i) continue;
+  for(auto i : vertices){
     int curDeg = 0;
-    for(auto j : redAdjacencies[i]){
-      if(contractionRemap[j] != j){
-        adjacencies[i].erase(j);
-        redAdjacencies[i].erase(j);
-        continue;
-      }
-      curDeg++;
+
+    for(auto j : vertices){
+      if( i == j) continue;
+      if(isRed(i,j)) curDeg++;
     }
     mx = std::max(mx, curDeg);
   }

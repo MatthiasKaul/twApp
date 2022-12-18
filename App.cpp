@@ -29,6 +29,9 @@ constexpr float captureDistance = 0.002;
 
 static bool validSolutionPresent = false;
 
+static bool EdgeMode = false;
+static int edgeStart = -1;
+
 
 void LLARPapp::mouseMovement(){
 
@@ -48,7 +51,7 @@ void LLARPapp::mousePress(SDL_Event& ev){
   float x = ((float) ev.button.x / (width - widthOfUI));
   float y = 1.f - ((float) ev.button.y / height);
 
-  if(ev.button.button == SDL_BUTTON_LEFT){
+  if(ev.button.button == SDL_BUTTON_LEFT && !EdgeMode){
     //convert to unit square coordinates of the drawing window
     for(auto& v : G.getVertices()){
       auto[vx, vy] = G.getPos(v);
@@ -56,8 +59,26 @@ void LLARPapp::mousePress(SDL_Event& ev){
     }
     mousePressed = true;
     if(vxSelected == -1) G.addVertex(x,y);
-
   }
+
+  if(ev.button.button == SDL_BUTTON_LEFT && EdgeMode){
+    //convert to unit square coordinates of the drawing window
+    int tmp = -1;
+    for(auto& v : G.getVertices()){
+      auto[vx, vy] = G.getPos(v);
+      if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < 0.006) tmp = v;
+    }
+    if(tmp != -1){
+      if(edgeStart == -1) {
+        edgeStart = tmp;
+      }else{
+        G.addEdge(edgeStart, tmp);
+        edgeStart = -1;
+      }
+    }
+  }
+
+
   if(ev.button.button == SDL_BUTTON_RIGHT){
     //convert to unit square coordinates of the drawing window
     if(contrStart == -1){
@@ -98,19 +119,46 @@ void LLARPapp::MainWindow(){
 
 
   if(ImGui::Button("Quit")) running = false;
-
-  std::string tmp = std::to_string(G.vCount()) + " Verts";
+  if(ImGui::Button("Edge Mode")) EdgeMode = !EdgeMode;
+  ImGui::SameLine();
+  std::string tmp;
+  if(EdgeMode){
+    tmp = "on";
+  }else{
+    tmp = "off";
+  }
   ImGui::Text(tmp.c_str());
 
+  tmp = std::to_string(G.vCount()) + " Verts";
+  ImGui::Text(tmp.c_str());
+
+  tmp = std::to_string(G.maxRedDegree()) + " Maximum Red Degree";
+  ImGui::Text(tmp.c_str());
   ImGui::End();
 
 
-  SDL_SetRenderDrawColor(SDLRenderer, 255 , 0, 0, 255);
+  SDL_SetRenderDrawColor(SDLRenderer, 122 , 122, 122, 255);
   SDL_SetRenderDrawBlendMode(SDLRenderer, SDL_BLENDMODE_BLEND);
   for(auto& v: G.getVertices()){
     auto [x,y] = G.getPos(v);
     SDL_Rect vx{((width - widthOfUI)*x) - 2, (height*(1.f - y)) - 2, 4, 4};
     SDL_RenderFillRect(SDLRenderer, &vx);
+  }
+
+  for(auto& v: G.getVertices()){
+    for(auto& w : G.getVertices()){
+      if(G.isEdge(v,w)){
+        auto [vx,vy] = G.getPos(v);
+        auto [wx,wy] = G.getPos(w);
+        if(G.isRed(v,w)){
+          SDL_SetRenderDrawColor(SDLRenderer, 255 , 0, 0, 255);
+        }else{
+          SDL_SetRenderDrawColor(SDLRenderer, 0 , 0, 255, 255);
+        }
+        SDL_SetRenderDrawBlendMode(SDLRenderer, SDL_BLENDMODE_BLEND);
+        SDL_RenderDrawLine(SDLRenderer, (width - widthOfUI)*vx, height*(1.f - vy), (width - widthOfUI)*wx, height*(1.f - wy));
+      }
+    }
   }
 }
 
