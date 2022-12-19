@@ -34,6 +34,7 @@ private:
 
   void dataDrawingWindow();
   void MainWindow();
+  void WelcomeWindow();
   void mousePress(SDL_Event& ev);
   void mouseRelease(SDL_Event& ev);
   void mouseMovement();

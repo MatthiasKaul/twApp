@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <string>
+#include <cmath>
 #include <thread>
 #include "App.hpp"
 #include "imgui.h"
@@ -26,7 +27,7 @@ constexpr int widthOfUI = 200;
 static bool mousePressed = false;
 static int vxSelected = -1;
 static int contrStart = -1;
-constexpr float captureDistance = 0.0005;
+constexpr float captureDistance = 0.0002;
 
 static bool validSolutionPresent = false;
 
@@ -34,6 +35,22 @@ static bool EdgeMode = false;
 static int edgeStart = -1;
 
 static int hoveredVx = -1;
+
+
+Graph getRandomGraph(int n, int density){
+  Graph G;
+  int gridSize = (int)std::floor(std::sqrt(n));
+  double offset = 1 / (2. + (double)gridSize);
+  for (size_t i = 0; i < n; i++) {
+    G.addVertex( offset*(i/gridSize + 1), offset*(i%gridSize + 1) );
+    for(int j  = 0; j < i; j++){
+      if( rand() % 100 < density){
+        G.addEdge(i,j);
+      }
+    }
+  }
+  return G;
+}
 
 void toggleEdgeMode(){
   EdgeMode = !EdgeMode;
@@ -132,6 +149,34 @@ void LLARPapp::mouseRelease(SDL_Event& ev){
   vxSelected = -1;
 }
 
+static bool showWelcomeWindow = true;
+
+void centerText(std::string txt, int width){
+  auto tw = ImGui::CalcTextSize(txt.c_str()).x;
+  ImGui::SetCursorPosX((width - tw) * 0.5f);
+  ImGui::Text(txt.c_str());
+}
+
+void LLARPapp::WelcomeWindow(){
+  ImGui::SetNextWindowPos(ImVec2(0, 0));
+  ImGui::SetNextWindowSize({(float)width,(float)height});
+  ImGui::Begin(name.c_str(), &showWelcomeWindow, ImGuiWindowFlags_AlwaysAutoResize);
+  centerText("Welcome to this Twin-Width drawing widget; Here are the rules:", width);
+  centerText("", width);
+  centerText("Press left mouse button to insert vertices, drag'n'drop to move vertices.", width);
+  centerText("Press right mouse button to select vertices for contraction.", width);
+  centerText("Press 'e' to toggle edge mode. In edge mode, left mouse button selects vertices to insert an edge.", width);
+  centerText("", width);
+  centerText("", width);
+  centerText("© 2022 Too Many Small Widgets Inc. ", width);
+  std::string tmp = "Get Started";
+  auto w = ImGui::CalcTextSize(tmp.c_str()).x;
+  ImGui::SetCursorPosX(0.5f * (width-w));
+  if(ImGui::Button("Get Started")) showWelcomeWindow = false;
+
+  ImGui::End();
+}
+
 void LLARPapp::MainWindow(){
 
   ImGui::SetNextWindowPos(ImVec2(width-widthOfUI, 0));
@@ -157,6 +202,17 @@ void LLARPapp::MainWindow(){
 
   tmp = std::to_string(G.maxRedDegree()) + " Maximum Red Degree";
   ImGui::Text(tmp.c_str());
+  ImGui::Separator();
+  ImGui::Separator();
+  ImGui::Text("Generate Random Graph");
+  static int n = 5;
+  ImGui::InputInt("# Vertices", &n);
+  n = std::clamp(n, 1, 50);
+  static int dens = 33;
+  ImGui::InputInt("Edge Density", &dens, 10, 90);
+  dens = std::clamp(dens, 10, 90);
+
+  if(ImGui::Button("Generate fresh graph")) G = getRandomGraph(n,dens);
   ImGui::End();
 
 
@@ -200,7 +256,7 @@ LLARPapp::LLARPapp(std::string name) : name{name}{
 
     // Create window with graphics context
 
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_MAXIMIZED);
 
     window = SDL_CreateWindow(name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, window_flags);
     SDLRenderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
@@ -227,17 +283,20 @@ LLARPapp::LLARPapp(std::string name) : name{name}{
 }
 
 void LLARPapp::loop(){
-
   while(running){
+
     SDL_GetWindowSize(window, &width, &height);
+
     SDL_Event ev;
     while (SDL_PollEvent(&ev)){
       ImGui_ImplSDL2_ProcessEvent(&ev);
       if(ev.type == SDL_QUIT) running = false;
       if(ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_CLOSE && ev.window.windowID == SDL_GetWindowID(window)) running = false;
-      if(ev.type == SDL_MOUSEBUTTONDOWN) mousePress(ev);
-      if(ev.type == SDL_MOUSEBUTTONUP   && ev.button.button == SDL_BUTTON_LEFT) mouseRelease(ev);
-      if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_e) toggleEdgeMode();
+      if(!showWelcomeWindow){
+        if(ev.type == SDL_MOUSEBUTTONDOWN) mousePress(ev);
+        if(ev.type == SDL_MOUSEBUTTONUP   && ev.button.button == SDL_BUTTON_LEFT) mouseRelease(ev);
+        if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_e) toggleEdgeMode();
+      }
     }
     hovered();
     mouseMovement();
@@ -249,8 +308,13 @@ void LLARPapp::loop(){
     SDL_SetRenderDrawColor(SDLRenderer, (Uint8)(clear_color.x * 0), (Uint8)(clear_color.y * 0), (Uint8)(clear_color.z * 0), (Uint8)(clear_color.w * 255));
     SDL_RenderClear(SDLRenderer);
     ImGui::NewFrame();
+    if(showWelcomeWindow) {
+      WelcomeWindow();
+    }else{
+      MainWindow();
 
-    MainWindow();
+    }
+
 
 
 

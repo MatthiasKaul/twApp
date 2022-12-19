@@ -3,7 +3,12 @@
 
 void Graph::contract(int v, int w){
   if(v == w) return;
-  if(v > w) std::swap(v,w); // by default, contract into the smaller index
+  if(v > w) {
+    std::swap(v,w); // by default, contract into the smaller index
+  }else{
+    xCoor[v] = xCoor[w]; //Contract (location wise) into whatever was selected second
+    yCoor[v] = yCoor[w];
+  }
   for(auto i : adjacencies[w]){
     if(adjacencies[v].count(i) == 0){
       adjacencies[v].insert(i); adjacencies[i].insert(v);
