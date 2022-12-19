@@ -1,6 +1,7 @@
 #include <tuple>
 #include <algorithm>
 #include <iomanip>
+#include <string>
 #include <thread>
 #include "App.hpp"
 #include "imgui.h"
@@ -25,13 +26,35 @@ constexpr int widthOfUI = 200;
 static bool mousePressed = false;
 static int vxSelected = -1;
 static int contrStart = -1;
-constexpr float captureDistance = 0.002;
+constexpr float captureDistance = 0.0005;
 
 static bool validSolutionPresent = false;
 
 static bool EdgeMode = false;
 static int edgeStart = -1;
 
+static int hoveredVx = -1;
+
+void toggleEdgeMode(){
+  EdgeMode = !EdgeMode;
+  vxSelected = -1;
+  contrStart = -1;
+  edgeStart = -1;
+}
+
+void LLARPapp::hovered(){
+  hoveredVx = -1;
+  int xPos, yPos;
+  int buttons = SDL_GetMouseState(&xPos, &yPos);
+  if(xPos > width - widthOfUI) return;
+  float x = ((float) xPos / (width - widthOfUI));
+  float y = 1.f - ((float) yPos / height);
+
+  for(auto& v : G.getVertices()){
+    auto[vx, vy] = G.getPos(v);
+    if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < captureDistance) {hoveredVx = v; break;}
+  }
+}
 
 void LLARPapp::mouseMovement(){
 
@@ -55,7 +78,7 @@ void LLARPapp::mousePress(SDL_Event& ev){
     //convert to unit square coordinates of the drawing window
     for(auto& v : G.getVertices()){
       auto[vx, vy] = G.getPos(v);
-      if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < 0.006) vxSelected = v;
+      if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < captureDistance) vxSelected = v;
     }
     mousePressed = true;
     if(vxSelected == -1) G.addVertex(x,y);
@@ -66,7 +89,7 @@ void LLARPapp::mousePress(SDL_Event& ev){
     int tmp = -1;
     for(auto& v : G.getVertices()){
       auto[vx, vy] = G.getPos(v);
-      if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < 0.006) tmp = v;
+      if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < captureDistance) tmp = v;
     }
     if(tmp != -1){
       if(edgeStart == -1) {
@@ -84,12 +107,12 @@ void LLARPapp::mousePress(SDL_Event& ev){
     if(contrStart == -1){
       for(auto& v : G.getVertices()){
         auto[vx, vy] = G.getPos(v);
-        if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < 0.006) contrStart = v;
+        if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < captureDistance) contrStart = v;
       }
     }else{
       for(auto& v : G.getVertices()){
         auto[vx, vy] = G.getPos(v);
-        if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < 0.006){
+        if( (x-vx) * (x-vx) + (y-vy)*(y-vy) < captureDistance){
           G.contract(contrStart, v);
           contrStart = -1;
           break;
@@ -119,7 +142,7 @@ void LLARPapp::MainWindow(){
 
 
   if(ImGui::Button("Quit")) running = false;
-  if(ImGui::Button("Edge Mode")) EdgeMode = !EdgeMode;
+  if(ImGui::Button("Edge Mode")) toggleEdgeMode();
   ImGui::SameLine();
   std::string tmp;
   if(EdgeMode){
@@ -137,9 +160,16 @@ void LLARPapp::MainWindow(){
   ImGui::End();
 
 
-  SDL_SetRenderDrawColor(SDLRenderer, 122 , 122, 122, 255);
+
   SDL_SetRenderDrawBlendMode(SDLRenderer, SDL_BLENDMODE_BLEND);
   for(auto& v: G.getVertices()){
+    if(v == vxSelected || v == contrStart || v == edgeStart){
+      SDL_SetRenderDrawColor(SDLRenderer, 100 , 150, 100, 255);
+    } else if(v == hoveredVx){
+      SDL_SetRenderDrawColor(SDLRenderer, 150 , 200, 150, 255);
+    } else {
+      SDL_SetRenderDrawColor(SDLRenderer, 255 , 255, 255, 255);
+    }
     auto [x,y] = G.getPos(v);
     SDL_Rect vx{((width - widthOfUI)*x) - 2, (height*(1.f - y)) - 2, 4, 4};
     SDL_RenderFillRect(SDLRenderer, &vx);
@@ -207,7 +237,9 @@ void LLARPapp::loop(){
       if(ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_CLOSE && ev.window.windowID == SDL_GetWindowID(window)) running = false;
       if(ev.type == SDL_MOUSEBUTTONDOWN) mousePress(ev);
       if(ev.type == SDL_MOUSEBUTTONUP   && ev.button.button == SDL_BUTTON_LEFT) mouseRelease(ev);
+      if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_e) toggleEdgeMode();
     }
+    hovered();
     mouseMovement();
 
 

@@ -2,6 +2,7 @@
 
 
 void Graph::contract(int v, int w){
+  if(v == w) return;
   if(v > w) std::swap(v,w); // by default, contract into the smaller index
   for(auto i : adjacencies[w]){
     if(adjacencies[v].count(i) == 0){

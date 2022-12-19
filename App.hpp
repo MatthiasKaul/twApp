@@ -37,6 +37,7 @@ private:
   void mousePress(SDL_Event& ev);
   void mouseRelease(SDL_Event& ev);
   void mouseMovement();
+  void hovered();
 
 public:
   void loop();
