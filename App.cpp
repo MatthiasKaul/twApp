@@ -52,6 +52,20 @@ Graph getRandomGraph(int n, int density){
   return G;
 }
 
+Graph getGrid(int n){
+  Graph G;
+  double offset = 1. / (2+n);
+  for (size_t i = 0; i < n*n; i++) {
+    G.addVertex( offset*(i/n + 1), offset*(i%n + 1) );
+  }
+
+  for (size_t i = 0; i < n*n; i++) {
+    if(i+n < n*n) G.addEdge(i,i+n);
+    if(i+1 < n*n && (i+1) % n != 0) G.addEdge(i,i+1);
+  }
+  return G;
+}
+
 void toggleEdgeMode(){
   EdgeMode = !EdgeMode;
   vxSelected = -1;
@@ -213,6 +227,16 @@ void LLARPapp::MainWindow(){
   dens = std::clamp(dens, 10, 90);
 
   if(ImGui::Button("Generate fresh graph")) G = getRandomGraph(n,dens);
+
+  ImGui::Separator();
+  ImGui::Separator();
+  ImGui::Text("Generate Grid Graph");
+  static int gridN = 4;
+  ImGui::InputInt("Dimension", &gridN);
+  gridN = std::clamp(gridN, 1, 7);
+  if(ImGui::Button("Generate Grid")) G = getGrid(gridN);
+
+
   ImGui::End();
 
 
