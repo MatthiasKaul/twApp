@@ -3,11 +3,15 @@
 
 #include <vector>
 #include <set>
-
+#include <tuple>
 
 
 class Graph {
 private:
+  bool validCache = false;
+  int cachedContractionCost;
+  int cachedV, cachedW;
+
   int n = 0;
   int activeVertices = 0;
   std::vector<float> xCoor = {};
@@ -43,6 +47,7 @@ public:
   std::pair<double,double> getPos(int v){return {xCoor[v], yCoor[v]};}
   int maxRedDegree();
   void addVertex(double x, double y){
+    validCache = false;
     xCoor.push_back(x); yCoor.push_back(y);
     adjacencies.push_back({});
     redAdjacencies.push_back({});
@@ -57,8 +62,12 @@ public:
     return rval;
   }
   void addEdge(int v, int w){
+    validCache = false;
     adjacencies[v].insert(w);
     adjacencies[w].insert(v);
   }
+  int costOfContraction(int v, int w);
+  std::tuple<int,int,int> cheapestContraction();
+  int redDegree(int v);
 };
 #endif /* end of include guard: GRAPH_HPP */

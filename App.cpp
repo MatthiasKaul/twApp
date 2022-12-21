@@ -216,6 +216,12 @@ void LLARPapp::MainWindow(){
 
   tmp = std::to_string(G.maxRedDegree()) + " Maximum Red Degree";
   ImGui::Text(tmp.c_str());
+  auto& [v,w,cost] = G.cheapestContraction();
+  tmp = "Next Contraction: " + std::to_string(cost);
+  ImGui::Text(tmp.c_str());
+  tmp = "Next Contraction: " + std::to_string(v) + " " + std::to_string(w);
+  ImGui::Text(tmp.c_str());
+
   ImGui::Separator();
   ImGui::Separator();
   ImGui::Text("Generate Random Graph");
@@ -242,6 +248,15 @@ void LLARPapp::MainWindow(){
 
 
   SDL_SetRenderDrawBlendMode(SDLRenderer, SDL_BLENDMODE_BLEND);
+
+  auto& [cv,cw,cs] = G.cheapestContraction();
+  for (auto u : {cv,cw}){
+    SDL_SetRenderDrawColor(SDLRenderer, 0 , 255, 0, 255);
+
+    auto [x,y] = G.getPos(u);
+    SDL_Rect vx{((width - widthOfUI)*x) - 2, (height*(1.f - y)) - 2, 8, 8};
+    SDL_RenderFillRect(SDLRenderer, &vx);
+  }
   for(auto& v: G.getVertices()){
     if(v == vxSelected || v == contrStart || v == edgeStart){
       SDL_SetRenderDrawColor(SDLRenderer, 100 , 150, 100, 255);
@@ -254,6 +269,7 @@ void LLARPapp::MainWindow(){
     SDL_Rect vx{((width - widthOfUI)*x) - 2, (height*(1.f - y)) - 2, 4, 4};
     SDL_RenderFillRect(SDLRenderer, &vx);
   }
+
 
   for(auto& v: G.getVertices()){
     for(auto& w : G.getVertices()){
@@ -270,6 +286,8 @@ void LLARPapp::MainWindow(){
       }
     }
   }
+
+
 }
 
 LLARPapp::LLARPapp(std::string name) : name{name}{
