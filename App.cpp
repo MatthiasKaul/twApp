@@ -180,6 +180,8 @@ void LLARPapp::WelcomeWindow(){
   centerText("Press left mouse button to insert vertices, drag'n'drop to move vertices.", width);
   centerText("Press right mouse button to select vertices for contraction.", width);
   centerText("Press 'e' to toggle edge mode. In edge mode, left mouse button selects vertices to insert an edge.", width);
+  centerText("Press 'n' to do greedy contraction.", width);
+
   centerText("", width);
   centerText("", width);
   centerText("© 2022 Too Many Small Widgets Inc. ", width);
@@ -299,8 +301,10 @@ LLARPapp::LLARPapp(std::string name) : name{name}{
     // Create window with graphics context
 
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_MAXIMIZED);
+    SDL_DisplayMode* mode = new SDL_DisplayMode;
+    SDL_GetCurrentDisplayMode(0,mode);
 
-    window = SDL_CreateWindow(name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, window_flags);
+    window = SDL_CreateWindow(name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mode->w, mode->h, window_flags);
     SDLRenderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 
 
@@ -338,6 +342,8 @@ void LLARPapp::loop(){
         if(ev.type == SDL_MOUSEBUTTONDOWN) mousePress(ev);
         if(ev.type == SDL_MOUSEBUTTONUP   && ev.button.button == SDL_BUTTON_LEFT) mouseRelease(ev);
         if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_e) toggleEdgeMode();
+        if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_n) {auto[v,w,c] = G.cheapestContraction(); G.contract(v,w);};
+
       }
     }
     hovered();
