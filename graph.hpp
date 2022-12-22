@@ -9,7 +9,7 @@
 class Graph {
 private:
   bool validCache = false;
-  int cachedContractionCost;
+  int cachedContractionCost = 0;
   int cachedV, cachedW;
 
   int n = 0;
@@ -70,4 +70,7 @@ public:
   std::tuple<int,int,int> cheapestContraction();
   int redDegree(int v);
 };
+
+Graph getRandomGraph(int n, int density);
+
 #endif /* end of include guard: GRAPH_HPP */

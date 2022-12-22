@@ -1,10 +1,13 @@
 #include "graph.hpp"
-
+#include <iostream>
+#include <cmath>
+  
 
 void Graph::contract(int v, int w){
   if(v == w) return;
+  if(contractionRemap[v] != v || contractionRemap[w] != w) return;
+
   validCache = false;
-  
   if(v > w) {
     std::swap(v,w); // by default, contract into the smaller index
   }else{
@@ -56,6 +59,7 @@ int Graph::maxRedDegree(){
     }
     mx = std::max(mx, curDeg);
   }
+  if(mx > 70) std::cout << "lolo\n";
   return mx;
 }
 
@@ -77,8 +81,8 @@ int Graph::costOfContraction(int v, int w){
   for(auto x : adjacencies[w]) if(adjacencies[v].count(x) == 0) reds.insert(x);
   int tmp = 0;
   for(auto x : reds) if(contractionRemap[x] == x) tmp++;
-
-  return std::max(tmp,rval);
+  rval = std::max(tmp,rval);
+  return rval;
 }
 
 std::tuple<int,int,int> Graph::cheapestContraction(){
@@ -100,4 +104,19 @@ std::tuple<int,int,int> Graph::cheapestContraction(){
     validCache = true;
     return {cachedV, cachedW, cachedContractionCost};
 
+}
+
+Graph getRandomGraph(int n, int density){
+  Graph G;
+  int gridSize = (int)std::floor(std::sqrt(n));
+  double offset = 1 / (2. + (double)gridSize);
+  for (size_t i = 0; i < n; i++) {
+    G.addVertex( offset*(i/gridSize + 1), offset*(i%gridSize + 1) );
+    for(int j  = 0; j < i; j++){
+      if( rand() % 100 < density){
+        G.addEdge(i,j);
+      }
+    }
+  }
+  return G;
 }

@@ -37,20 +37,6 @@ static int edgeStart = -1;
 static int hoveredVx = -1;
 
 
-Graph getRandomGraph(int n, int density){
-  Graph G;
-  int gridSize = (int)std::floor(std::sqrt(n));
-  double offset = 1 / (2. + (double)gridSize);
-  for (size_t i = 0; i < n; i++) {
-    G.addVertex( offset*(i/gridSize + 1), offset*(i%gridSize + 1) );
-    for(int j  = 0; j < i; j++){
-      if( rand() % 100 < density){
-        G.addEdge(i,j);
-      }
-    }
-  }
-  return G;
-}
 
 Graph getGrid(int n){
   Graph G;
@@ -218,12 +204,6 @@ void LLARPapp::MainWindow(){
 
   tmp = std::to_string(G.maxRedDegree()) + " Maximum Red Degree";
   ImGui::Text(tmp.c_str());
-  auto& [v,w,cost] = G.cheapestContraction();
-  tmp = "Next Contraction: " + std::to_string(cost);
-  ImGui::Text(tmp.c_str());
-  tmp = "Next Contraction: " + std::to_string(v) + " " + std::to_string(w);
-  ImGui::Text(tmp.c_str());
-
   ImGui::Separator();
   ImGui::Separator();
   ImGui::Text("Generate Random Graph");
@@ -251,7 +231,7 @@ void LLARPapp::MainWindow(){
 
   SDL_SetRenderDrawBlendMode(SDLRenderer, SDL_BLENDMODE_BLEND);
 
-  auto& [cv,cw,cs] = G.cheapestContraction();
+  auto [cv,cw,cs] = G.cheapestContraction();
   for (auto u : {cv,cw}){
     SDL_SetRenderDrawColor(SDLRenderer, 0 , 255, 0, 255);
 
